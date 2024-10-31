@@ -2,12 +2,18 @@
 #include "libopencm3/stm32/gpio.h"
 #include "libopencm3/cm3/scb.h" // For vector table offset register
 
+#include "lynxmotion.h"
+
 #include "core/system.h"
 #include "core/uart.h"
+#include "gpio.h"
 #include "sys_timer.h"
 
 #include <stdio.h>
 #include <string.h>
+
+// Define Robot state here
+
 
 #define BOOTLOADER_SIZE     (0x8000U)
 
@@ -55,6 +61,10 @@ static void loc_gpio_setup(void)
     rcc_periph_clock_enable(RCC_GPIOC);
     gpio_mode_setup(SERVO_C_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, SERVO_WRIST_UPPER_PIN);
     gpio_set_af(SERVO_C_PORT, GPIO_AF2, SERVO_WRIST_UPPER_PIN);
+    
+    // Setup button 
+    // gpio_mode_setup(BUILTIN_BU_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, BUILTIN_BU_PIN);
+
 }
 
 static void MotorSetup(LynxMotion_t *arm)
@@ -93,70 +103,144 @@ static void setPWMforRobotWithDelay(LynxMotion_t *arm, float duty_cycle, uint64_
     corePWMSetDutyCycleStruct(&arm->gripperJoint, duty_cycle);
 }
 
-
 int main(void)
 {
+    setRobotState(STATE_INIT);
     loc_vector_setup();
     coreSystemSetup();
     loc_gpio_setup();
-    //coreTimerSetup();
-    // TimerControl_t timer2;
-    // TimerControl_t timer3;
-    // TimerControl_t timer4;
-    // coreTimerSetupReturns(&timer2, RCC_TIM2, TIM2, 84 + 1, 20000 + 1, TIM_OC1);
-
-    LynxMotion_t arm;
-    MotorSetup(&arm);
+    setup_push_button();
     coreUartSetup(115200);
+    setRobotState(STATE_TEACH_POS1);
 
-    uint64_t start_time = coreGetTicks();
-    float duty_cycle = 7.9f;
+    coreUartWrite("Initialisation Completed!\r\n", 28);
+    uint64_t time_in_move = coreGetTicks();
 
-    // corePWMSetDutyCycleStruct(&timer2, duty_cycle);
-    setPWMforRobotWithDelay(&arm, duty_cycle, 1000);
-
+    State previous_state = getRobotState();
     while (1)
     {
-        while (coreUartDataAvailable()) 
+        State current_state = getRobotState();
+        switch (current_state)
         {
-
-            // coreUartWriteByte(data);
-            uint8_t data = coreUartReadByte();
-
-            switch (data) {
-                case '+': {
-                    duty_cycle += 0.1f;
-                    break;
-                }
-                case '-': {
-                    duty_cycle -= 0.1f;
-                }
-                default:
+            case STATE_TEACH_POS1:
+            {
+                if (previous_state != current_state)
                 {
-                    break;
+                    coreUartWrite("I am in teach mode 1\r\n", 23);
                 }
+                break;
             }
-            
+            case STATE_TEACH_POS2:
+            {
+                if (previous_state != current_state)
+                {
+                    coreUartWrite("I am in teach mode 2\r\n", 23);
+                }
+                break;
+            }
+            case STATE_MOVING_POS1:
+            {
+                if (previous_state != current_state)
+                {
+                    time_in_move = coreGetTicks();
+                    coreUartWrite("I am in move mode 1\r\n", 22);
+                }
+                if (coreGetTicks() - time_in_move > 5000)
+                {
+                    setRobotState(STATE_MOVING_POS2);
+                }
+                break;
+            }
+            case STATE_MOVING_POS2:
+            {
+                if (previous_state != current_state)
+                {
+                    time_in_move = coreGetTicks();
+                    coreUartWrite("I am in move mode 2\r\n", 22);
+                }
+                
+                if (coreGetTicks() - time_in_move > 5000)
+                {
+                    setRobotState(STATE_MOVING_POS1);
+                }
+                break;
+            }
+            default:
+            {
+                coreUartWrite("You shouldn't be here!\r\n", 25);
+                break;
+            }
         }
-        
-        if (duty_cycle > 13.2f)
-        {
-            duty_cycle = 13.2f;
-        }
-
-        if (duty_cycle < 3.3f)
-        {
-            duty_cycle = 3.3f;
-        }
-        //corePWMSetDutyCycleStruct(&timer2, duty_cycle);
-        setPWMforRobotWithDelay(&arm, duty_cycle, 500);
-        char buffer[128];
-        sprintf(buffer, "duty cycle - %.1f%%\r\n", duty_cycle);
-        coreUartWrite(buffer, strlen(buffer));
-        
-        
-        coreSystemDelay(10);
+        previous_state = current_state;
+        coreSystemDelay(100);
     }
-    // Should never get here
+
     return 0;
 }
+
+// int main(void)
+// {
+//     loc_vector_setup();
+//     coreSystemSetup();
+//     loc_gpio_setup();
+//     //coreTimerSetup();
+//     // TimerControl_t timer2;
+//     // TimerControl_t timer3;
+//     // TimerControl_t timer4;
+//     // coreTimerSetupReturns(&timer2, RCC_TIM2, TIM2, 84 + 1, 20000 + 1, TIM_OC1);
+
+//     LynxMotion_t arm;
+//     MotorSetup(&arm);
+//     coreUartSetup(115200);
+
+//     uint64_t start_time = coreGetTicks();
+//     float duty_cycle = 7.9f;
+
+//     // corePWMSetDutyCycleStruct(&timer2, duty_cycle);
+//     setPWMforRobotWithDelay(&arm, duty_cycle, 1000);
+
+//     while (1)
+//     {
+//         while (coreUartDataAvailable()) 
+//         {
+
+//             // coreUartWriteByte(data);
+//             uint8_t data = coreUartReadByte();
+
+//             switch (data) {
+//                 case '+': {
+//                     duty_cycle += 0.1f;
+//                     break;
+//                 }
+//                 case '-': {
+//                     duty_cycle -= 0.1f;
+//                 }
+//                 default:
+//                 {
+//                     break;
+//                 }
+//             }
+            
+//         }
+        
+//         if (duty_cycle > 13.2f)
+//         {
+//             duty_cycle = 13.2f;
+//         }
+
+//         if (duty_cycle < 3.3f)
+//         {
+//             duty_cycle = 3.3f;
+//         }
+//         //corePWMSetDutyCycleStruct(&timer2, duty_cycle);
+//         setPWMforRobotWithDelay(&arm, duty_cycle, 500);
+//         char buffer[128];
+//         sprintf(buffer, "duty cycle - %.1f%%\r\n", duty_cycle);
+//         coreUartWrite(buffer, strlen(buffer));
+        
+        
+//         coreSystemDelay(10);
+//     }
+//     // Should never get here
+//     return 0;
+// }

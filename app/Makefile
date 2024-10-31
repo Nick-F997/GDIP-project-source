@@ -59,6 +59,8 @@ CSTD		?= -std=c99
 OBJS		+= $(SRC_DIR)/$(BINARY).o
 OBJS		+= $(SRC_DIR)/bootloader.o
 OBJS        += $(SRC_DIR)/timer.o
+OBJS		+= $(SRC_DIR)/gpio.o
+OBJS		+= $(SRC_DIR)/lynxmotion.o
 OBJS		+= $(SHARED_SRC_DIR)/core/system.o
 OBJS		+= $(SHARED_SRC_DIR)/core/uart.o
 OBJS		+= $(SHARED_SRC_DIR)/core/ring-buffer.o
