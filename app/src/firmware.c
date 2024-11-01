@@ -8,6 +8,7 @@
 #include "core/uart.h"
 #include "gpio.h"
 #include "sys_timer.h"
+#include "adc.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -37,6 +38,8 @@
 #define SERVO_C_PORT            (GPIOC)
 #define SERVO_WRIST_UPPER_PIN   (GPIO7)
 
+#define ADC_PORT                (GPIOA)
+#define ADC_PIN                 (GPIO4)
 
 static void loc_vector_setup(void) {
     SCB_VTOR = BOOTLOADER_SIZE; // Offset main Vector Table by size of bootloader so it knows where to look.
@@ -48,6 +51,7 @@ static void loc_gpio_setup(void)
     rcc_periph_clock_enable(RCC_GPIOA);
     gpio_mode_setup(BUILTIN_LD2_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, BUILTIN_LD2_PIN | SERVO_BASE_PIN | SERVO_BASE_UPPER_PIN); // Set LED2 pin to Alternative Function mode
     gpio_set_af(BUILTIN_LD2_PORT, GPIO_AF1, BUILTIN_LD2_PIN | SERVO_BASE_PIN | SERVO_BASE_UPPER_PIN);
+    gpio_mode_setup(ADC_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, ADC_PIN);
 
     // GPIO setup for uart. Clock for peripheral is set elsewhere
     gpio_mode_setup(UART_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, UART_TX_PIN | UART_RX_PIN /* boolean or in order to set both pins*/);
@@ -111,6 +115,8 @@ int main(void)
     loc_gpio_setup();
     setup_push_button();
     coreUartSetup(115200);
+    loc_adc_setup();
+
     setRobotState(STATE_TEACH_POS1);
 
     coreUartWrite("Initialisation Completed!\r\n", 28);
@@ -128,6 +134,11 @@ int main(void)
                 {
                     coreUartWrite("I am in teach mode 1\r\n", 23);
                 }
+                uint16_t adc_val = loc_read_adc(4);
+                double percentage_val = (double)adc_val / 4096.0f;
+                char buffer[128];
+                sprintf(buffer, "Pot Val - %d\tPercentage Val - %d\r\n", adc_val, (int)(percentage_val * 10000));
+                coreUartWrite(buffer, strlen(buffer));
                 break;
             }
             case STATE_TEACH_POS2:
@@ -136,6 +147,12 @@ int main(void)
                 {
                     coreUartWrite("I am in teach mode 2\r\n", 23);
                 }
+                uint16_t adc_val = loc_read_adc(4);
+                double percentage_val = (double)adc_val / 4096.0f;
+
+                char buffer[128];
+                sprintf(buffer, "Pot Val - %d\tPercentage Val - %d\r\n", adc_val, (int)(percentage_val * 10000));
+                coreUartWrite(buffer, strlen(buffer));
                 break;
             }
             case STATE_MOVING_POS1:
