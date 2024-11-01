@@ -2,6 +2,19 @@
 
 static volatile uint8_t channels[ADC_CHANNEL_NUM] = {4, 8, 11, 10, 6, 7};
 
+static uint16_t sum_avg_uint16t(uint16_t *arr, int size)
+{
+    uint16_t sum = 0;
+    for (int i = 0; i < size; i++)
+    {
+        sum += arr[i];
+    }
+
+    return (uint16_t)(sum / size);
+}
+
+
+
 void loc_adc_setup(void)
 {
     
@@ -35,8 +48,16 @@ uint16_t *read_all_channels(void)
     uint16_t *channelValues = (uint16_t *)malloc(sizeof(uint16_t) * ADC_CHANNEL_NUM);
     for (int channel = 0; channel < ADC_CHANNEL_NUM; channel++)
     {
-        channelValues[channel] = loc_read_adc(channels[channel]);
+        uint16_t avgVals[ADC_LOCAL_SAMPLE_RATE];
+        for (int sample = 0; sample < ADC_LOCAL_SAMPLE_RATE; sample++)
+        {
+            avgVals[sample] = loc_read_adc(channels[channel]);
+
+        }
+        
+        channelValues[channel] = sum_avg_uint16t(avgVals, ADC_LOCAL_SAMPLE_RATE);
     }
 
     return channelValues;
 }
+

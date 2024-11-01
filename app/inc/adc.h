@@ -8,6 +8,7 @@
 #include "libopencm3/stm32/rcc.h"
 
 #define ADC_CHANNEL_NUM (6)
+#define ADC_LOCAL_SAMPLE_RATE (15)
 
 void loc_adc_setup(void);
 uint16_t loc_read_adc(uint8_t channel);
