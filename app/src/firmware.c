@@ -11,6 +11,7 @@
 #include "adc.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 // Define Robot state here
@@ -18,58 +19,13 @@
 
 #define BOOTLOADER_SIZE     (0x8000U)
 
-#define BUILTIN_LD2_PORT    (GPIOA)
-#define BUILTIN_LD2_PIN     (GPIO5)
 
-#define UART_PORT           (GPIOA)
-#define UART_TX_PIN         (GPIO2)
-#define UART_RX_PIN         (GPIO3)
-
-#define SERVO_A_PORT            (GPIOA)
-#define SERVO_BASE_PIN          (GPIO0)
-#define SERVO_BASE_UPPER_PIN    (GPIO1)
-
-
-#define SERVO_B_PORT            (GPIOB)
-#define SERVO_GRIPPER_PIN       (GPIO4)
-#define SERVO_ELBOW_PIN         (GPIO6)
-#define SERVO_WRIST_LOWER_PIN   (GPIO10)
-
-#define SERVO_C_PORT            (GPIOC)
-#define SERVO_WRIST_UPPER_PIN   (GPIO7)
-
-#define ADC_PORT                (GPIOA)
-#define ADC_PIN                 (GPIO4)
 
 static void loc_vector_setup(void) {
     SCB_VTOR = BOOTLOADER_SIZE; // Offset main Vector Table by size of bootloader so it knows where to look.
 }
 
-static void loc_gpio_setup(void)
-{
-    // Enable GPIO rcc clock
-    rcc_periph_clock_enable(RCC_GPIOA);
-    gpio_mode_setup(BUILTIN_LD2_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, BUILTIN_LD2_PIN | SERVO_BASE_PIN | SERVO_BASE_UPPER_PIN); // Set LED2 pin to Alternative Function mode
-    gpio_set_af(BUILTIN_LD2_PORT, GPIO_AF1, BUILTIN_LD2_PIN | SERVO_BASE_PIN | SERVO_BASE_UPPER_PIN);
-    gpio_mode_setup(ADC_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, ADC_PIN);
 
-    // GPIO setup for uart. Clock for peripheral is set elsewhere
-    gpio_mode_setup(UART_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, UART_TX_PIN | UART_RX_PIN /* boolean or in order to set both pins*/);
-    gpio_set_af(UART_PORT, GPIO_AF7, UART_TX_PIN | UART_RX_PIN); // See datasheet for function.
-
-    rcc_periph_clock_enable(RCC_GPIOB);
-    gpio_mode_setup(SERVO_B_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, SERVO_GRIPPER_PIN | SERVO_ELBOW_PIN | SERVO_WRIST_LOWER_PIN);
-    gpio_set_af(SERVO_B_PORT, GPIO_AF2, SERVO_GRIPPER_PIN | SERVO_ELBOW_PIN);
-    gpio_set_af(SERVO_B_PORT, GPIO_AF1, SERVO_WRIST_LOWER_PIN);
-
-    rcc_periph_clock_enable(RCC_GPIOC);
-    gpio_mode_setup(SERVO_C_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, SERVO_WRIST_UPPER_PIN);
-    gpio_set_af(SERVO_C_PORT, GPIO_AF2, SERVO_WRIST_UPPER_PIN);
-    
-    // Setup button 
-    // gpio_mode_setup(BUILTIN_BU_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, BUILTIN_BU_PIN);
-
-}
 
 static void MotorSetup(LynxMotion_t *arm)
 {
@@ -109,8 +65,8 @@ static void setPWMforRobotWithDelay(LynxMotion_t *arm, float duty_cycle, uint64_
 
 int main(void)
 {
-    setRobotState(STATE_INIT);
     loc_vector_setup();
+    setRobotState(STATE_INIT);
     coreSystemSetup();
     loc_gpio_setup();
     setup_push_button();
@@ -135,9 +91,11 @@ int main(void)
                     coreUartWrite("I am in teach mode 1\r\n", 23);
                 }
                 uint16_t adc_val = loc_read_adc(4);
-                double percentage_val = (double)adc_val / 4096.0f;
+
+                
+                
                 char buffer[128];
-                sprintf(buffer, "Pot Val - %d\tPercentage Val - %d\r\n", adc_val, (int)(percentage_val * 10000));
+                sprintf(buffer, "Pot Val - %d\r\n", adc_val);
                 coreUartWrite(buffer, strlen(buffer));
                 break;
             }
@@ -147,12 +105,14 @@ int main(void)
                 {
                     coreUartWrite("I am in teach mode 2\r\n", 23);
                 }
-                uint16_t adc_val = loc_read_adc(4);
-                double percentage_val = (double)adc_val / 4096.0f;
+                
+                uint16_t *adc_vals = read_all_channels();
 
+                
                 char buffer[128];
-                sprintf(buffer, "Pot Val - %d\tPercentage Val - %d\r\n", adc_val, (int)(percentage_val * 10000));
+                sprintf(buffer, "pot1 = %d\tpot2 = %d\tpot3 = %d\tpot4 = %d\tpot5 = %d\tpot6 = %d\r\n", adc_vals[0], adc_vals[1], adc_vals[2], adc_vals[3], adc_vals[4], adc_vals[5]);
                 coreUartWrite(buffer, strlen(buffer));
+                free(adc_vals);
                 break;
             }
             case STATE_MOVING_POS1:

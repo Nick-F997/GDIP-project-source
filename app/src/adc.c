@@ -1,5 +1,7 @@
 #include "adc.h"
 
+static volatile uint8_t channels[ADC_CHANNEL_NUM] = {4, 8, 11, 10, 6, 7};
+
 void loc_adc_setup(void)
 {
     
@@ -7,13 +9,14 @@ void loc_adc_setup(void)
     adc_power_off(ADC1);
     adc_disable_scan_mode(ADC1);
     adc_set_sample_time(ADC1, ADC_CHANNEL4, ADC_SMPR_SMP_3CYC);
+    adc_set_sample_time(ADC1, ADC_CHANNEL6, ADC_SMPR_SMP_3CYC);
+    adc_set_sample_time(ADC1, ADC_CHANNEL7, ADC_SMPR_SMP_3CYC);
+    adc_set_sample_time(ADC1, ADC_CHANNEL8, ADC_SMPR_SMP_3CYC);
+    adc_set_sample_time(ADC1, ADC_CHANNEL10, ADC_SMPR_SMP_3CYC);
+    adc_set_sample_time(ADC1, ADC_CHANNEL11, ADC_SMPR_SMP_3CYC);
     adc_power_on(ADC1);
 }
 
-void loc_adc_setup_advanced(void)
-{
-    
-}
 
 uint16_t loc_read_adc(uint8_t channel)
 {
@@ -24,4 +27,16 @@ uint16_t loc_read_adc(uint8_t channel)
     while (!adc_eoc(ADC1));
     uint16_t reg16 = adc_read_regular(ADC1);
     return reg16;
+}
+
+
+uint16_t *read_all_channels(void)
+{
+    uint16_t *channelValues = (uint16_t *)malloc(sizeof(uint16_t) * ADC_CHANNEL_NUM);
+    for (int channel = 0; channel < ADC_CHANNEL_NUM; channel++)
+    {
+        channelValues[channel] = loc_read_adc(channels[channel]);
+    }
+
+    return channelValues;
 }
