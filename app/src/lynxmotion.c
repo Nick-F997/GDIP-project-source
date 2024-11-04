@@ -110,7 +110,7 @@ LynxMotion_t *init_robot(uint8_t num_joints)
         arm->joints[joint] = (LynxMotion_Joint_t *)malloc(sizeof(LynxMotion_Joint_t));
         arm->joints[joint]->type = (JointType)joint;
         arm->joints[joint]->adc = get_adc_channel(arm->joints[joint]->type); // Setup is done elsewhere as it's really simple
-        TimerControl_t *target_joint = &arm->joints[joint]->joint;
+        TimerControl_t *target_joint = &arm->joints[joint]->joint; // Create a pointer because that is a horrible line of code
         switch (arm->joints[joint]->type)
         {
             case JOINT_BASE:
@@ -162,10 +162,10 @@ LynxMotion_t *init_robot(uint8_t num_joints)
 }
 
 /**
- * @brief 
+ * @brief Moves a joint using PID
  * 
- * @param joint 
- * @param target_duty 
+ * @param joint the joint to move
+ * @param target_duty the target duty cycle for the PID controller.
  */
 static void PIDMoveJoint(LynxMotion_Joint_t *joint, float target_duty)
 {
@@ -229,7 +229,6 @@ static void teach_states(LynxMotion_t *arm, State teach)
         // corePWMSetDutyCycleStruct(&arm->joints[joint]->joint, arm->joints[joint]->joint.duty_cycle);
         PIDMoveJoint(arm->joints[joint], target_dc);
     }
-    printf("\e[1;1H\e[2J");
 }
 
 /**

@@ -43,6 +43,8 @@ int main(void)
     {
         state_machine_operations(robot_main);
         coreSystemDelay(100);
+        printf("\e[1;1H\e[2J");
+
     }
 
     return 0;
