@@ -14,7 +14,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #define BOOTLOADER_SIZE     (0x8000U)
 
 
@@ -36,7 +35,7 @@ int main(void)
 
     setRobotState(STATE_TEACH_POS1);
 
-    coreUartWrite("Initialisation Completed!\r\n", 28);
+    printf("Initialisation Completed!\r\n");
     // uint64_t time_in_move = coreGetTicks();
 
 

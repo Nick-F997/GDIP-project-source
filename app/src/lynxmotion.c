@@ -204,12 +204,7 @@ static void PIDMoveJoint(LynxMotion_Joint_t *joint, float target_duty)
         value_to_write = MIN_DUTY_CYCLE;
     }
 
-    if (joint->type == JOINT_BASE_UPPER)
-    {
-        char buffer[64];
-        sprintf(buffer, "value sent = %f\r\nValue - %f\r\n", target_duty, value_to_write);
-        coreUartWrite(buffer, strlen(buffer));
-    }
+    printf("Joint num - %d\tpot value = %f\tpid value = %f\r\n", joint->type, target_duty, value_to_write);
     corePWMSetDutyCycleStruct(&joint->joint, value_to_write);
 
 }
@@ -223,6 +218,8 @@ static void PIDMoveJoint(LynxMotion_Joint_t *joint, float target_duty)
  */
 static void teach_states(LynxMotion_t *arm, State teach)
 {
+    printf("------PID Values in state %d -----\r\n", teach);
+    printf("==================================\r\n");
     for (int joint = 0; joint < arm->num_joints; joint++)
     {
         float target_dc = read_adc_update_joint_position(arm->joints[joint]);
@@ -232,6 +229,7 @@ static void teach_states(LynxMotion_t *arm, State teach)
         // corePWMSetDutyCycleStruct(&arm->joints[joint]->joint, arm->joints[joint]->joint.duty_cycle);
         PIDMoveJoint(arm->joints[joint], target_dc);
     }
+    printf("\e[1;1H\e[2J");
 }
 
 /**
@@ -258,7 +256,7 @@ void state_machine_operations(LynxMotion_t *arm)
         {
             if (current_state != arm->previous_state)
             {
-                coreUartWrite("In teach 1\r\n", 13);
+                printf("State teach 1");   
             }
             teach_states(arm, STATE_TEACH_POS1);
             break;
@@ -267,7 +265,7 @@ void state_machine_operations(LynxMotion_t *arm)
         {
             if (current_state != arm->previous_state)
             {
-                coreUartWrite("In teach 2\r\n", 13);
+                printf("State teach 2\r\n");
             }
             teach_states(arm, STATE_TEACH_POS2);
             break;  
