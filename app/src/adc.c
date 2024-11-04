@@ -42,6 +42,18 @@ uint16_t loc_read_adc(uint8_t channel)
     return reg16;
 }
 
+uint16_t read_channel_averaged(uint8_t channel, uint16_t sample_depth)
+{
+    uint16_t avgVals = 0;
+    for (int _i = 0; _i < sample_depth; _i++)
+    {
+        uint16_t value = loc_read_adc(channel);
+        avgVals += value;
+    }
+
+    (uint16_t)(avgVals / sample_depth);
+
+}
 
 uint16_t *read_all_channels(void)
 {
@@ -61,3 +73,7 @@ uint16_t *read_all_channels(void)
     return channelValues;
 }
 
+ADCControl_t get_adc_channel(uint16_t joint)
+{
+    return (ADCControl_t) {.channel = channels[joint], .current_reading = 0, .sample_depth = ADC_LOCAL_SAMPLE_RATE};
+}

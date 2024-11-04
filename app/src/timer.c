@@ -42,6 +42,8 @@ void corePWMSetDutyCycle(float duty_cycle)
     timer_set_oc_value(TIM2, TIM_OC1, (uint32_t)raw_val);
 }
 
+
+
 void corePWMSetDutyCycleStruct(TimerControl_t *controller, float duty_cycle)
 {
     controller->duty_cycle = duty_cycle;
