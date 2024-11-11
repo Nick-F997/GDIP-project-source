@@ -42,7 +42,7 @@ int main(void)
     while (1)
     {
         state_machine_operations(robot_main);
-        coreSystemDelay(100);
+        coreSystemDelay(1);
         printf("\e[1;1H\e[2J");
 
     }

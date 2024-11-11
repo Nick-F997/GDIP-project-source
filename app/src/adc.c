@@ -51,8 +51,23 @@ uint16_t read_channel_averaged(uint8_t channel, uint16_t sample_depth)
         avgVals += value;
     }
 
-    (uint16_t)(avgVals / sample_depth);
+    return (uint16_t)(avgVals / sample_depth);
 
+}
+
+void read_channel_smoothed(uint8_t channel, uint16_t *current_sample, uint8_t exponent)
+{
+    static bool firstTime = true;
+
+    if (firstTime)
+    {
+        *current_sample = loc_read_adc(channel);
+        firstTime = false;
+        return;
+    }
+
+    uint16_t raw_val = loc_read_adc(channel);
+    *current_sample += (raw_val - *current_sample) >> exponent;
 }
 
 uint16_t *read_all_channels(void)

@@ -21,6 +21,7 @@ void loc_adc_setup(void);
 uint16_t loc_read_adc(uint8_t channel);
 uint16_t *read_all_channels(void);
 uint16_t read_channel_averaged(uint8_t channel, uint16_t sample_depth);
+void read_channel_smoothed(uint8_t channel, uint16_t *current_sample, uint8_t exponent);
 ADCControl_t get_adc_channel(uint16_t joint);
 
 

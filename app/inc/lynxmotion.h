@@ -18,6 +18,7 @@
 #include "sys_timer.h"
 #include "adc.h"
 #include "core/uart.h"
+#include "core/system.h"
 
 // @brief Minimum Duty cycle for PWM in percentage
 #define MIN_DUTY_CYCLE (3.3f)
@@ -29,9 +30,9 @@
 // @brief Maximum pot value from ADC channel
 #define MAX_POT_VALUE (4096)
 
-#define GLOBAL_P (0.01)
-#define GLOBAL_I (0.1)
-#define GLOBAL_D (0.1)
+#define GLOBAL_P (0.09)
+#define GLOBAL_I (0.0000005)
+#define GLOBAL_D (12.0)
 
 /** 
  * @brief Enum used to control the state machine governing movement of robot. Prefixed with 'STATE'.
@@ -76,6 +77,7 @@ typedef struct LynxMotion_Joint_Position_t
 {
     float position1;
     float position2;
+    bool at_position;
 } LynxMotion_Joint_Position_t;
 
 /**

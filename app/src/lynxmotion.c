@@ -63,7 +63,8 @@ State getRobotState_(LynxMotion_t *arm)
  */
 float read_adc_update_joint_position(LynxMotion_Joint_t *joint)
 {
-    joint->adc.current_reading = read_channel_averaged(joint->adc.channel, joint->adc.sample_depth);
+    //joint->adc.current_reading = read_channel_averaged(joint->adc.channel, joint->adc.sample_depth);
+    read_channel_smoothed(joint->adc.channel, &joint->adc.current_reading, 2);
     float true_duty = ((float)(joint->adc.current_reading - MIN_POT_VALUE) / (float)(MAX_POT_VALUE - MIN_POT_VALUE)) 
                         * ((MAX_DUTY_CYCLE - MIN_DUTY_CYCLE)) + MIN_DUTY_CYCLE;
     // joint->joint.duty_cycle = true_duty;
@@ -110,6 +111,7 @@ LynxMotion_t *init_robot(uint8_t num_joints)
         arm->joints[joint] = (LynxMotion_Joint_t *)malloc(sizeof(LynxMotion_Joint_t));
         arm->joints[joint]->type = (JointType)joint;
         arm->joints[joint]->adc = get_adc_channel(arm->joints[joint]->type); // Setup is done elsewhere as it's really simple
+        arm->joints[joint]->positions = (LynxMotion_Joint_Position_t) {.at_position = false, .position1 = 0.0f, .position2 = 0.0f};
         TimerControl_t *target_joint = &arm->joints[joint]->joint; // Create a pointer because that is a horrible line of code
         switch (arm->joints[joint]->type)
         {
@@ -169,8 +171,11 @@ LynxMotion_t *init_robot(uint8_t num_joints)
  */
 static void PIDMoveJoint(LynxMotion_Joint_t *joint, float target_duty)
 {
+    static uint64_t previous_time = 0;
     float error = target_duty - joint->joint.duty_cycle;
     
+    uint64_t current_time = coreGetTicks();
+    uint64_t dt = current_time - previous_time;
     // Proportional component
     float prop_comp = joint->pid_values.P * error;
     
@@ -185,15 +190,19 @@ static void PIDMoveJoint(LynxMotion_Joint_t *joint, float target_duty)
     }
 
     joint->pid_values.integrator_sum += error;
-    float int_comp = joint->pid_values.I * error;
+    float int_comp = joint->pid_values.I * joint->pid_values.integrator_sum  * (float)dt;
 
     // Derivative Component
     float error_deriv = error - joint->pid_values.previous_error;
-    float deriv_component = joint->pid_values.D * error_deriv;
+    float deriv_component = joint->pid_values.D * (error_deriv / (float)dt);
     joint->pid_values.previous_error = error;
+
+    
 
     float final_value = prop_comp + int_comp + deriv_component;
     float value_to_write = joint->joint.duty_cycle + final_value;
+    
+    previous_time = current_time;
 
     if (value_to_write > MAX_DUTY_CYCLE)
     {
@@ -232,6 +241,87 @@ static void teach_states(LynxMotion_t *arm, State teach)
 }
 
 /**
+ * @brief Helper function to get abs value.
+ * 
+ * @param numb number to get abs value of.
+ * @return float abs value of numb
+ */
+float fabs(float numb)
+{
+    if (numb < 0.0f)
+    {
+        return -numb;
+    }
+    else {
+        return numb;
+    }
+}
+
+
+/**
+ * @brief 
+ * 
+ */
+static void move_states(LynxMotion_t *arm, State state)
+{
+    const float MAX_DIFF = 0.5f;
+    if (state == STATE_MOVING_POS1)
+    {
+        uint8_t at_position1 = 0;
+        for (int joint = 0; joint < arm->num_joints; joint++)
+        {
+            if (!arm->joints[joint]->positions.at_position)
+            {
+            
+                    PIDMoveJoint(arm->joints[joint], arm->joints[joint]->positions.position1);
+                    if (fabs(arm->joints[joint]->joint.duty_cycle - arm->joints[joint]->positions.position1) < MAX_DIFF)
+                    {
+                        arm->joints[joint]->positions.at_position = true;
+                    }
+            }
+            else {
+                at_position1++;
+            }
+        }
+        if (at_position1 == 6)
+        {
+            setRobotState_(arm, STATE_MOVING_POS2);
+            for (int i = 0; i < arm->num_joints; i++) arm->joints[i]->positions.at_position = false;
+            coreSystemDelay(2500);
+            return;
+        }
+    }
+
+    if (state == STATE_MOVING_POS2)
+    {
+        uint8_t at_position2 = 0;
+        for (int joint = 0; joint < arm->num_joints; joint++)
+        {
+            if (!arm->joints[joint]->positions.at_position)
+            {
+            
+                    PIDMoveJoint(arm->joints[joint], arm->joints[joint]->positions.position2);
+                    if (fabs(arm->joints[joint]->joint.duty_cycle - arm->joints[joint]->positions.position2) < MAX_DIFF)
+                    {
+                        arm->joints[joint]->positions.at_position = true;
+                    }
+            }
+            else {
+                at_position2++;
+            }
+        }
+        if (at_position2 == 6)
+        {
+            setRobotState_(arm, STATE_MOVING_POS1);
+            for (int i = 0; i < arm->num_joints; i++) arm->joints[i]->positions.at_position = false;
+            coreSystemDelay(2500);
+            return;
+        }
+    }
+}
+
+
+/**
  * @brief The state machine manager. 
  * 
  * @param arm the robot arm to be affected.
@@ -247,15 +337,28 @@ void state_machine_operations(LynxMotion_t *arm)
             break;
         }
         case STATE_MOVING_POS1:
+        {
+            if (current_state != arm->previous_state)
+            {
+                printf("Moving state 1\r\n");
+            }
+            move_states(arm, STATE_MOVING_POS1);
+            break;
+        }
         case STATE_MOVING_POS2:
         {
+            if (current_state != arm->previous_state)
+            {
+                printf("Moving state 2\r\n");
+            }
+            move_states(arm, STATE_MOVING_POS2);
             break;
         }
         case STATE_TEACH_POS1:
         {
             if (current_state != arm->previous_state)
             {
-                printf("State teach 1");   
+                printf("State teach 1\r\n");   
             }
             teach_states(arm, STATE_TEACH_POS1);
             break;
