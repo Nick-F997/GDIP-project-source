@@ -282,6 +282,7 @@ static void move_states(LynxMotion_t *arm, State state)
             else {
                 at_position1++;
             }
+            coreSystemDelay(5);
         }
         if (at_position1 == 6)
         {
@@ -309,6 +310,8 @@ static void move_states(LynxMotion_t *arm, State state)
             else {
                 at_position2++;
             }
+            coreSystemDelay(5);
+
         }
         if (at_position2 == 6)
         {

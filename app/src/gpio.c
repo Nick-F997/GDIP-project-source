@@ -49,21 +49,21 @@ void loc_gpio_setup(void)
 
 void setup_push_button(void)
 {
-    rcc_periph_clock_enable(RCC_GPIOC);
-    gpio_mode_setup(BUILTIN_BU_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, BUILTIN_BU_PIN);
+    rcc_periph_clock_enable(RCC_GPIOA);
+    gpio_mode_setup(GPIOA, GPIO_MODE_INPUT, GPIO_PUPD_PULLDOWN, GPIO10);
 
     // setup exti
     rcc_periph_clock_enable(RCC_SYSCFG);
 
     nvic_enable_irq(NVIC_EXTI15_10_IRQ);
-    exti_select_source(EXTI13, BUILTIN_BU_PORT);
-    exti_set_trigger(EXTI13, EXTI_TRIGGER_FALLING);
-    exti_enable_request(EXTI13);
+    exti_select_source(EXTI10, GPIOA);
+    exti_set_trigger(EXTI10, EXTI_TRIGGER_FALLING);
+    exti_enable_request(EXTI10);
 }
 
 void exti15_10_isr(void)
 {
-    if (exti_get_flag_status(EXTI13))
+    if (exti_get_flag_status(EXTI10))
     {
         switch (getRobotState())
         {
@@ -89,7 +89,7 @@ void exti15_10_isr(void)
                 break;
             }
         }
-        exti_reset_request(EXTI13);
+        exti_reset_request(EXTI10);
         
     }
 }

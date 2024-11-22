@@ -30,9 +30,14 @@
 // @brief Maximum pot value from ADC channel
 #define MAX_POT_VALUE (4096)
 
-#define GLOBAL_P (0.09)
-#define GLOBAL_I (0.0000005)
-#define GLOBAL_D (12.0)
+// #define GLOBAL_P (0.09)
+// #define GLOBAL_I (0.0000005)
+// #define GLOBAL_D (12.0)
+
+#define GLOBAL_P (0.1)
+#define GLOBAL_I (0)
+#define GLOBAL_D (0)
+
 
 /** 
  * @brief Enum used to control the state machine governing movement of robot. Prefixed with 'STATE'.
