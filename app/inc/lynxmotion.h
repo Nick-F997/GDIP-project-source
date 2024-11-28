@@ -112,10 +112,10 @@ typedef struct LynxMotion_t
     State previous_state;
 } LynxMotion_t;
 
-// @brief helper macro to make timer set up easier.
+/// @brief helper macro to make timer set up easier.
 #define SETUP_JOINT_TIMER(joint, rcc, oc) (coreTimerSetupReturns(joint, RCC_TIM##rcc, TIM##rcc, 84 + 1, 20000 + 1, TIM_OC##oc))
 
-//@brief helper macro to update position structs
+/// @brief helper macro to update position structs
 #define UPDATE_POSITION_STRUCT(joint_t, duty_cycle, pos) (joint_t->positions.position##pos = duty_cycle)
 
 #define SET_PID_VALUES(joint_t, PP, II, DD) (joint_t->pid_values = (PIDControl_t) {.P = PP, .I = II, .D = DD, .integrator_sum = 0.0f, .previous_error = 0.0f})
