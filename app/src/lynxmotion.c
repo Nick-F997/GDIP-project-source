@@ -257,10 +257,12 @@ float fabs(float numb)
     }
 }
 
-
 /**
- * @brief 
+ * @brief Function to move the arm when in either STATE_MOVING_POS1 or STATE_MOVING_POS2.
+ *        Does not move gripper until all other joints are in the correct position.
  * 
+ * @param arm Arm structure to move
+ * @param state Current state of the robot
  */
 static void move_states(LynxMotion_t *arm, State state)
 {
@@ -270,6 +272,7 @@ static void move_states(LynxMotion_t *arm, State state)
         uint8_t at_position1 = 0;
         for (int joint = 0; joint < arm->num_joints; joint++)
         {
+            if (arm->joints[joint]->type == JOINT_GRIPPER) continue;
             if (!arm->joints[joint]->positions.at_position)
             {
             
@@ -284,8 +287,16 @@ static void move_states(LynxMotion_t *arm, State state)
             }
             coreSystemDelay(5);
         }
-        if (at_position1 == 6)
+        if (at_position1 == 5)
         {
+            while (!arm->joints[JOINT_GRIPPER]->positions.at_position)
+            {
+                PIDMoveJoint(arm->joints[JOINT_GRIPPER], arm->joints[JOINT_GRIPPER]->positions.position1);
+                if (fabs(arm->joints[JOINT_GRIPPER]->joint.duty_cycle - arm->joints[JOINT_GRIPPER]->positions.position1) < MAX_DIFF)
+                {
+                    arm->joints[JOINT_GRIPPER]->positions.at_position = true;
+                }
+            }
             setRobotState_(arm, STATE_MOVING_POS2);
             for (int i = 0; i < arm->num_joints; i++) arm->joints[i]->positions.at_position = false;
             coreSystemDelay(2500);
@@ -298,14 +309,14 @@ static void move_states(LynxMotion_t *arm, State state)
         uint8_t at_position2 = 0;
         for (int joint = 0; joint < arm->num_joints; joint++)
         {
+            if (arm->joints[joint]->type == JOINT_GRIPPER) continue;
             if (!arm->joints[joint]->positions.at_position)
             {
-            
-                    PIDMoveJoint(arm->joints[joint], arm->joints[joint]->positions.position2);
-                    if (fabs(arm->joints[joint]->joint.duty_cycle - arm->joints[joint]->positions.position2) < MAX_DIFF)
-                    {
-                        arm->joints[joint]->positions.at_position = true;
-                    }
+                PIDMoveJoint(arm->joints[joint], arm->joints[joint]->positions.position2);
+                if (fabs(arm->joints[joint]->joint.duty_cycle - arm->joints[joint]->positions.position2) < MAX_DIFF)
+                {
+                    arm->joints[joint]->positions.at_position = true;
+                }
             }
             else {
                 at_position2++;
@@ -313,8 +324,16 @@ static void move_states(LynxMotion_t *arm, State state)
             coreSystemDelay(5);
 
         }
-        if (at_position2 == 6)
+        if (at_position2 == 5)
         {
+            while (!arm->joints[JOINT_GRIPPER]->positions.at_position)
+            {
+                PIDMoveJoint(arm->joints[JOINT_GRIPPER], arm->joints[JOINT_GRIPPER]->positions.position2);
+                if (fabs(arm->joints[JOINT_GRIPPER]->joint.duty_cycle - arm->joints[JOINT_GRIPPER]->positions.position2) < MAX_DIFF)
+                {
+                    arm->joints[JOINT_GRIPPER]->positions.at_position = true;
+                }
+            }
             setRobotState_(arm, STATE_MOVING_POS1);
             for (int i = 0; i < arm->num_joints; i++) arm->joints[i]->positions.at_position = false;
             coreSystemDelay(2500);
