@@ -8,6 +8,7 @@
 
 #include "core/uart.h"
 #include "lynxmotion.h"
+#include "fault-handler.h"
 
 #define BUILTIN_BU_PORT     (GPIOC)
 #define BUILTIN_BU_PIN      (GPIO13)
@@ -38,5 +39,7 @@
 
 void loc_gpio_setup(void);
 void setup_push_button(void);
+void setup_emergency_stop_button(void);
+void toggle_status_led(char colour);
 
 #endif

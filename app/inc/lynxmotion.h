@@ -19,6 +19,7 @@
 #include "adc.h"
 #include "core/uart.h"
 #include "core/system.h"
+#include "fault-handler.h"
 
 // @brief Minimum Duty cycle for PWM in percentage
 #define MIN_DUTY_CYCLE (3.3f)

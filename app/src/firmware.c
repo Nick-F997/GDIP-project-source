@@ -21,7 +21,6 @@ static void loc_vector_setup(void) {
     SCB_VTOR = BOOTLOADER_SIZE; // Offset main Vector Table by size of bootloader so it knows where to look.
 }
 
-
 int main(void)
 {
     loc_vector_setup();
@@ -32,12 +31,22 @@ int main(void)
     setup_push_button();
     coreUartSetup(115200);
     loc_adc_setup();
+    
+    setup_emergency_stop_button();
 
     setRobotState(STATE_TEACH_POS1);
+    
+    toggle_status_led('r');
+    coreSystemDelay(500);
+    toggle_status_led('o');
+    coreSystemDelay(500);
+    toggle_status_led('g');
+    coreSystemDelay(500);
+
+    toggle_status_led('o');
 
     printf("Initialisation Completed!\r\n");
     // uint64_t time_in_move = coreGetTicks();
-
 
     while (1)
     {
