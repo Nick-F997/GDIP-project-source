@@ -34,6 +34,21 @@ State getRobotState(void)
 }
 
 /**
+ * @brief Basic Hard Fault handler. Just hangs until user resets. Will eventually light up the red light.
+ * 
+ * @param message message to display to user.
+ */
+void hardFaultHandler(char *message)
+{
+    printf("Hard fault: %s\r\n", message);
+    printf("Please reset board to clear.\r\n");
+    while (1)
+    {
+
+    }
+}
+
+/**
  * @brief Set the Robot State_ object within LynxMotion_t type. Should be used outside of interrupts.
  * 
  * @param arm LynxMotion_t control structure.
@@ -98,9 +113,17 @@ void free_robot(LynxMotion_t *arm)
 LynxMotion_t *init_robot(uint8_t num_joints)
 {
     LynxMotion_t *arm = (LynxMotion_t *)malloc(sizeof(LynxMotion_t));
+    if (arm == NULL)
+    {
+        hardFaultHandler("Could not allocate memory for arm struct in: lynxmotion.c/init_robot");
+    }
     arm->num_joints = num_joints;
     arm->robot_state = &RobotState;
     arm->joints = (LynxMotion_Joint_t **)malloc(sizeof(LynxMotion_Joint_t *) * arm->num_joints);
+    if (arm->joints == NULL)
+    {
+        hardFaultHandler("Could not allocate memory for joint structs in: lynxmotion.c/init_robot");
+    }
     
     rcc_periph_clock_enable(RCC_TIM2);
     rcc_periph_clock_enable(RCC_TIM3);
@@ -246,7 +269,7 @@ static void teach_states(LynxMotion_t *arm, State teach)
  * @param numb number to get abs value of.
  * @return float abs value of numb
  */
-float fabs(float numb)
+static float fabs(float numb)
 {
     if (numb < 0.0f)
     {

@@ -73,7 +73,7 @@ TGT_CFLAGS	+= $(OPT) $(CSTD) $(DEBUG)
 TGT_CFLAGS	+= $(ARCH_FLAGS)
 TGT_CFLAGS	+= -Wextra -Wshadow -Wimplicit-function-declaration
 TGT_CFLAGS	+= -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes
-TGT_CFLAGS	+= -fno-common -ffunction-sections -fdata-sections
+TGT_CFLAGS	+= -fno-common -ffunction-sections -fdata-sections -fanalyzer
 
 ###############################################################################
 # C++ flags
