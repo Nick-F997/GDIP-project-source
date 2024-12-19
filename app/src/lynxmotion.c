@@ -65,7 +65,7 @@ State getRobotState_(LynxMotion_t *arm)
 float read_adc_update_joint_position(LynxMotion_Joint_t *joint)
 {
     //joint->adc.current_reading = read_channel_averaged(joint->adc.channel, joint->adc.sample_depth);
-    read_channel_smoothed(joint->adc.channel, &joint->adc.current_reading, 2);
+    read_channel_smoothed(joint->adc.channel, &joint->adc.current_reading, 4);
     float true_duty = ((float)(joint->adc.current_reading - MIN_POT_VALUE) / (float)(MAX_POT_VALUE - MIN_POT_VALUE)) 
                         * ((MAX_DUTY_CYCLE - MIN_DUTY_CYCLE)) + MIN_DUTY_CYCLE;
     // joint->joint.duty_cycle = true_duty;
@@ -178,7 +178,7 @@ LynxMotion_t *init_robot(uint8_t num_joints)
  * @param joint the joint to move
  * @param target_duty the target duty cycle for the PID controller.
  */
-static void PIDMoveJoint(LynxMotion_Joint_t *joint, float target_duty)
+static void PIDMoveJoint_old(LynxMotion_Joint_t *joint, float target_duty)
 {
     static uint64_t previous_time = 0;
     float error = target_duty - joint->joint.duty_cycle;
@@ -222,9 +222,69 @@ static void PIDMoveJoint(LynxMotion_Joint_t *joint, float target_duty)
         value_to_write = MIN_DUTY_CYCLE;
     }
 
-    printf("Joint num - %d\tpot value = %f\tpid value = %f\r\n", joint->type, target_duty, value_to_write);
-    corePWMSetDutyCycleStruct(&joint->joint, value_to_write);
+    printf("Joint num - %d\tpot value = %f\tpid value = %f\r\n", joint->type, target_duty, final_value);
+    corePWMSetDutyCycleStruct(&joint->joint, final_value);
 
+}
+
+/**
+ * @brief *UPDATED* Moves a joint using PID
+ * 
+ * @param joint the joint to move
+ * @param target_duty the target duty cycle for the PID controller.
+ */
+static void PIDMoveJoint(LynxMotion_Joint_t *joint, float target_duty)
+{
+    static uint64_t previous_time = 0;
+    float error = target_duty - joint->joint.duty_cycle;
+    
+    uint64_t current_time = coreGetTicks();
+    uint64_t dt_ticks = current_time - previous_time;
+    float dt = (float)dt_ticks / (CLOCKS_PER_SEC / 1000); // Convert ticks to milliseconds
+    if (dt < EPSILON) dt = EPSILON; // Prevent division by zero
+
+    // Proportional component
+    float prop_comp = joint->pid_values.P * error;
+    
+    // Integral component
+    joint->pid_values.integrator_sum += error * dt;
+    if (joint->pid_values.integrator_sum > MAX_INTEGRATOR_SUM)
+    {
+        joint->pid_values.integrator_sum = MAX_INTEGRATOR_SUM;
+    }
+    if (joint->pid_values.integrator_sum < -MAX_INTEGRATOR_SUM)
+    {
+        joint->pid_values.integrator_sum = -MAX_INTEGRATOR_SUM;
+    }
+    float int_comp = joint->pid_values.I * joint->pid_values.integrator_sum;
+
+    // Derivative component
+    float error_deriv = (error - joint->pid_values.previous_error) / dt;
+    joint->pid_values.filtered_deriv = (joint->pid_values.filtered_deriv * (1.0 - FILTER_CONSTANT)) + (error_deriv * FILTER_CONSTANT);
+    float deriv_comp = joint->pid_values.D * joint->pid_values.filtered_deriv;
+    joint->pid_values.previous_error = error;
+
+    // Calculate final PID value
+    float final_value = prop_comp + int_comp + deriv_comp;
+    
+    // Clamp output to valid range
+    if (final_value > MAX_DUTY_CYCLE)
+    {
+        final_value = MAX_DUTY_CYCLE;
+    }
+    if (final_value < MIN_DUTY_CYCLE)
+    {
+        final_value = MIN_DUTY_CYCLE;
+    }
+
+    // Update duty cycle
+    // joint->joint.duty_cycle = final_value;
+
+    // Update previous time
+    previous_time = current_time;
+
+    printf("Joint num - %d\tpot value = %.3f\tpid value = %.3f\r\n", joint->type, target_duty, final_value);
+    corePWMSetDutyCycleStruct(&joint->joint, final_value);
 }
 
 /**
@@ -294,7 +354,7 @@ static void move_states(LynxMotion_t *arm, State state)
             else {
                 at_position1++;
             }
-            coreSystemDelay(5);
+            //coreSystemDelay(5);
         }
         if (at_position1 == 5)
         {
@@ -330,7 +390,7 @@ static void move_states(LynxMotion_t *arm, State state)
             else {
                 at_position2++;
             }
-            coreSystemDelay(5);
+            // coreSystemDelay(5);
 
         }
         if (at_position2 == 5)

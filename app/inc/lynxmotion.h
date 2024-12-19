@@ -35,10 +35,14 @@
 // #define GLOBAL_I (0.0000005)
 // #define GLOBAL_D (12.0)
 
-#define GLOBAL_P (0.1)
-#define GLOBAL_I (0)
-#define GLOBAL_D (0)
+#define GLOBAL_P (0.9)
+#define GLOBAL_I (0.005)
+#define GLOBAL_D (0.1)
 
+#define MAX_INTEGRATOR_SUM 32000.0f
+#define FILTER_CONSTANT 0.1f
+#define EPSILON 1e-6
+#define CLOCKS_PER_SEC 1000
 
 /** 
  * @brief Enum used to control the state machine governing movement of robot. Prefixed with 'STATE'.
@@ -73,6 +77,7 @@ typedef struct PIDControl_t
     float D;
     float integrator_sum;
     float previous_error;
+    float filtered_deriv;
 } PIDControl_t;
 
 /**
@@ -119,7 +124,7 @@ typedef struct LynxMotion_t
 /// @brief helper macro to update position structs
 #define UPDATE_POSITION_STRUCT(joint_t, duty_cycle, pos) (joint_t->positions.position##pos = duty_cycle)
 
-#define SET_PID_VALUES(joint_t, PP, II, DD) (joint_t->pid_values = (PIDControl_t) {.P = PP, .I = II, .D = DD, .integrator_sum = 0.0f, .previous_error = 0.0f})
+#define SET_PID_VALUES(joint_t, PP, II, DD) (joint_t->pid_values = (PIDControl_t) {.P = PP, .I = II, .D = DD, .integrator_sum = 0.0f, .previous_error = 0.0f, .filtered_deriv = 0.0f})
 
 void setRobotState(State state);
 State getRobotState(void);
