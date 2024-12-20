@@ -65,7 +65,7 @@ State getRobotState_(LynxMotion_t *arm)
 float read_adc_update_joint_position(LynxMotion_Joint_t *joint)
 {
     //joint->adc.current_reading = read_channel_averaged(joint->adc.channel, joint->adc.sample_depth);
-    read_channel_smoothed(joint->adc.channel, &joint->adc.current_reading, 4);
+    read_channel_smoothed(joint->adc.channel, &joint->adc.current_reading, 2);
     float true_duty = ((float)(joint->adc.current_reading - MIN_POT_VALUE) / (float)(MAX_POT_VALUE - MIN_POT_VALUE)) 
                         * ((MAX_DUTY_CYCLE - MIN_DUTY_CYCLE)) + MIN_DUTY_CYCLE;
     // joint->joint.duty_cycle = true_duty;
