@@ -30,14 +30,7 @@ typedef struct TimerControl_t {
     uint32_t prescaler;
 } TimerControl_t;
 
-typedef struct LynxMotion_t {
-    TimerControl_t baseJoint;
-    TimerControl_t baseUpperJoint;
-    TimerControl_t wristLowerJoint;
-    TimerControl_t gripperJoint;
-    TimerControl_t wristUpperJoint;
-    TimerControl_t elbowJoint;
-} LynxMotion_t;
+
 
 void coreTimerSetupReturns(TimerControl_t *controller, enum rcc_periph_clken periph_clock, uint32_t timer, int prescaler, int arr_value, enum tim_oc_id channel);
 void corePWMSetDutyCycleStruct(TimerControl_t *controller, float duty_cycle);

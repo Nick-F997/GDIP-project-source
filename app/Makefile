@@ -59,6 +59,10 @@ CSTD		?= -std=c99
 OBJS		+= $(SRC_DIR)/$(BINARY).o
 OBJS		+= $(SRC_DIR)/bootloader.o
 OBJS        += $(SRC_DIR)/timer.o
+OBJS		+= $(SRC_DIR)/gpio.o
+OBJS		+= $(SRC_DIR)/lynxmotion.o
+OBJS		+= $(SRC_DIR)/adc.o
+OBJS		+= $(SRC_DIR)/fault-handler.o
 OBJS		+= $(SHARED_SRC_DIR)/core/system.o
 OBJS		+= $(SHARED_SRC_DIR)/core/uart.o
 OBJS		+= $(SHARED_SRC_DIR)/core/ring-buffer.o
@@ -70,7 +74,7 @@ TGT_CFLAGS	+= $(OPT) $(CSTD) $(DEBUG)
 TGT_CFLAGS	+= $(ARCH_FLAGS)
 TGT_CFLAGS	+= -Wextra -Wshadow -Wimplicit-function-declaration
 TGT_CFLAGS	+= -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes
-TGT_CFLAGS	+= -fno-common -ffunction-sections -fdata-sections
+TGT_CFLAGS	+= -fno-common -ffunction-sections -fdata-sections -fanalyzer
 
 ###############################################################################
 # C++ flags
