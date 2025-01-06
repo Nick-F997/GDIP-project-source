@@ -354,10 +354,11 @@ static void move_states(LynxMotion_t *arm, State state)
             else {
                 at_position1++;
             }
-            //coreSystemDelay(5);
+            coreSystemDelay(2);
         }
         if (at_position1 == 5)
         {
+            coreSystemDelay(2500);
             while (!arm->joints[JOINT_GRIPPER]->positions.at_position)
             {
                 PIDMoveJoint(arm->joints[JOINT_GRIPPER], arm->joints[JOINT_GRIPPER]->positions.position1);
@@ -390,11 +391,12 @@ static void move_states(LynxMotion_t *arm, State state)
             else {
                 at_position2++;
             }
-            // coreSystemDelay(5);
+            coreSystemDelay(2);
 
         }
         if (at_position2 == 5)
         {
+            coreSystemDelay(2500);
             while (!arm->joints[JOINT_GRIPPER]->positions.at_position)
             {
                 PIDMoveJoint(arm->joints[JOINT_GRIPPER], arm->joints[JOINT_GRIPPER]->positions.position2);
